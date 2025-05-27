@@ -1,0 +1,14 @@
+﻿  GarbageCollector.cpp
+C:\Users\chakh\source\repos\reflect\Project11\Project11\ObjectReflector.h(45,3): warning C4984: 'if constexpr' is a C++17 language extension
+C:\Users\chakh\source\repos\reflect\Project11\Project11\ObjectReflector.h(85,3): warning C4984: 'if constexpr' is a C++17 language extension
+C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(153,14): warning C4930: 'std::thread markThread(void)': prototyped function not called (was a variable definition intended?)
+C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(195,8): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(285,11): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  Generating code
+  9 of 2170 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    13 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Project11.vcxproj -> C:\Users\chakh\source\repos\reflect\Project11\x64\Release\Project11.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
