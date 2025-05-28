@@ -10,11 +10,9 @@
 #define MAX_REGION_CAPACITY (MAX_OBJECT_SIZE / 20)
 #define GC_OBJECT_SIZE (MAX_OBJECT_SIZE - 800)
 #define DEFAULT_PADDING 8
+#define MAX_GC_THREAD 1
 
 enum class EGCState : unsigned char {
-	UNMARKED,
-	MARKED,
-	DEAD,
 	WHITE,
 	GRAY,
 	BLACK
@@ -28,7 +26,7 @@ enum class EGCColor : unsigned char {
 
 class AllocObj {
 public:
-	EGCState state;
+	volatile EGCState state;
 	char age;
 	unsigned short regionID;
 	unsigned int size;
@@ -86,7 +84,7 @@ class QPtr {
 class Region {
 public:
 	char* memory;
-	int usedSize;
+	std::atomic<int> usedSize;
 	int age;
 	bool isFull;
 	//void** liveNodes;
@@ -164,6 +162,7 @@ public:/*
 
 	bool onGC = false;
 	bool onMarking = false;
+	bool onSweep;
 	// stw
 	void mark();
 	void finMark();
@@ -171,6 +170,7 @@ public:/*
 	void markRef(GCPointer* _this, std::mutex& m);
 
 
+	void concurrentSweep();
 	void sweep();
 	void sweep2(SweepData& data, std::mutex& m);
 
@@ -191,6 +191,8 @@ public:/*
 	void mainMark();
 	int popUnused();
 	int popLiveOrUnused();
+	int peekUnsued();
+
 	void registerGray(GCPointer* val);
 
 
@@ -203,17 +205,20 @@ public:/*
 
 	inline void pushLive(void* live) {
 		int rid = GET_TAG(live)->regionID;
+		//GET_TAG(live)->state = EGCState::WHITE;
 		regions[rid].pushLive(live);
 		/*if (!sweepRegions.count(rid)) {
 			sweepRegions.emplace(rid);
 			youngRegions.push_back(rid);
 		}*/
 
-		std::cout << live << "is Alive\n";
+		//std::cout << live << "is Alive\n";
 	}
 
 	inline void insertDirtyCard(GCPointer* _changedRef) {
 		dirtyCard.push_back(_changedRef);
+		GET_TAG(_changedRef->get())->state = EGCState::WHITE;
+		_changedRef->disableRemark();
 	}
 
 	static GarbageCollector* get() {
@@ -227,12 +232,13 @@ class GCMember : public GCPointer {
 public:
 	GCMember<T>() {
 		ptr = nullptr;
+		remark = true;
 	}
 
 	inline GCMember<T>& operator=(const GCMember<T>& other) {
 		ptr = reinterpret_cast<void*>(other);
 		if (GarbageCollector::get()->onMarking) {
-			if (!remark) {
+			if (remark) {
 				GarbageCollector::get()->insertDirtyCard(this);
 				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
 			}
@@ -243,7 +249,7 @@ public:
 	inline GCMember<T>& operator=(T* other) {
 		ptr = reinterpret_cast<void*>(other);
 		if (GarbageCollector::get()->onMarking) {
-			if (!remark) {
+			if (remark) {
 				GarbageCollector::get()->insertDirtyCard(this);
 				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
 			}

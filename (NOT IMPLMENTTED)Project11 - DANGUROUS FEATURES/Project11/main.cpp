@@ -219,19 +219,22 @@ int main() {
 	gco->dude = new GCObjectable();
 	//gcob = new GCObjectable();
 	gcob->one();
+	gco->dude->one();
 	for (int i = 0; i < 20000; i++) {
 		//gco->dude = new GCObjectable();
 		//if (i == 0) gcob.ptr = gco->dude;
 		gco->buddy = new GCObjectable();
 		gco->buddy = new GCObjectable();
 		gco->buddy2 = new GCObject();
+		if (i == 5000) gco->dude = (GCObjectable*)gco->buddy.get();
 		//std::cout << "size is" << GET_TAG(gco->buddy)->size << "\n\n\n\n\n";
 		//if (GET_REFLECTOR(gco.ptr)->isAChildOf(GET_REFLECTOR(gco->buddy2))) {
 		
 		//}
-		gcob->one();
+		//gcob->one();
 	}
 	gcob->one();
+	gco->dude->one();
 	auto pro = GCPtr<TestClass>(new TestClass());
 	pro->truea = 20;
 	finish = clock();

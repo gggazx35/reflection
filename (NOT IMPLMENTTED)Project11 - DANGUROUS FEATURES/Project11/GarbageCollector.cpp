@@ -29,7 +29,7 @@ void GarbageCollector::mark() {
 	//youngRegions.push_;back(eden);
 
 	eden = popUnused();
-	std::cout << "FFAS\n";
+	std::cout << "mark started\n";
 	for (auto ref : refs) {
 		if (ref->ptr) {
 			registerGray(ref);
@@ -41,10 +41,18 @@ void GarbageCollector::mark() {
 }
 
 void GarbageCollector::finMark() {
+
+	for (auto ref : refs) {
+		if (ref->ptr) {
+			registerGray(ref);
+		}
+	}
+
 	for (auto ref : dirtyCard) {
 		if(ref->ptr)
 			registerGray(ref);
 	}
+	dirtyCard.clear();
 	grayOut();
 }
 
@@ -63,7 +71,6 @@ void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 		if (val->get()) {
 			//registerGray(val);
 			if (GET_TAG(val)->state == EGCState::WHITE) {
-				GET_TAG(val)->state = EGCState::GRAY;
 				registerGray(val);
 			}
 			//if (match.count(val) == 0) 
@@ -72,11 +79,9 @@ void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 			m.unlock();*/
 		}
 	}
-	m.lock();
 	pushLive(self);
-	m.unlock();
 
-	std::cout << "name was " << refs->name << "\n";
+	//std::cout << "name was " << refs->name << "\n";
 	//gray.pop_front();
 }
 
@@ -93,7 +98,7 @@ void GarbageCollector::grayOut()
 	//onMarking = true;
 	std::mutex m;
 	{
-		ThreadPool threads(4);
+		ThreadPool threads(MAX_GC_THREAD);
 		int graySize = 0;
 		int i = 0;
 		do {
@@ -109,9 +114,8 @@ void GarbageCollector::grayOut()
 			if (graySize < gray.getSize())
 				continue;
 		} while (0);
-		printf("im not\n");
 	}
-	onMarking = false;
+	
 	gray.reset();
 	//if (gray.empty()) sweep2();
 	//gray.clear();
@@ -121,13 +125,16 @@ void GarbageCollector::registerGray(GCPointer* val)
 {
 	//EGCState state = GET_TAG(val)->state;
 	//int region = GET_TAG(val)->regionID;
-	//if (state == EGCState::WHITE) {
-	gray.append(val);
+	void* ptr = val->get();
+	//std::cout << GET_TAG(val->get())->forwardPointer << ", " << val->ptr << ", " << (unsigned char)GET_TAG(val->get())->state << '\n';
 
-	val->ptr = GET_TAG(val->get())->forwardPointer;
-	GET_TAG(val->get())->state = EGCState::GRAY;
-	val->enableRemark();
-	//}
+	val->ptr = GET_TAG(ptr)->forwardPointer;
+	if (GET_TAG(ptr)->state == EGCState::WHITE) {
+		gray.append(val);
+
+		//GET_TAG(ptr)->state = EGCState::GRAY;
+		val->enableRemark();
+	}
 }
 
 void GarbageCollector::startGC()
@@ -140,20 +147,24 @@ void GarbageCollector::startGC()
 	do {
 
 		if (onGC == false) {
+			onGC = true;
+			while (onSweep == true);
 			mark();
-			onMarking = true;
-			std::thread markThread([this]() { this->grayOut(); });
+			
+			std::thread markThread([this]() { onMarking = true; this->grayOut(); onMarking = false; });
 			markThread.detach();
 		}
 		else {
 			while (onMarking == true);
+			//// stop the world ////
 			finMark();
+			onSweep = true;
 			sweep();
+			onSweep = false;
 			onGC = false;
-			continue;
+			/// end stop the world ///
 		}
 	} while (0);
-	onGC = true;
 
 	finish = clock();
 
@@ -163,13 +174,10 @@ void GarbageCollector::startGC()
 void GarbageCollector::pushUnused(int region)
 {
 	sweepRegions.erase(region);
-	if(regions[region].liveNodes.empty())
-		unusedRegions.push_front(region);
-	else
-		unusedRegions.push_back(region);
+	unusedRegions.push_back(region);
 	regions[region].age = 0;
 	regions[region].usedSize = 0;
-	//regions[region].liveNodes.reset();
+	regions[region].liveNodes.reset();
 }
 
 void GarbageCollector::mainMark()
@@ -211,6 +219,15 @@ int GarbageCollector::popLiveOrUnused()
 	return popUnused();
 }
 
+int GarbageCollector::peekUnsued()
+{
+	//Region* re = nullptr;
+	if (unusedRegions.empty()) {
+		terminate();
+	}
+	return unusedRegions.front();
+}
+
 void GarbageCollector::compactRef(void* _this) {
 	//auto refs = GET_REFLECTOR(_this);
 	//for (auto ref : refs->pointers) {
@@ -238,16 +255,21 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 		auto obj = GET_TAG(ref);
 		if (obj->state == EGCState::BLACK) {
 #ifdef _DEBUG 
-			std::cout << (int)obj->age << " " << obj->size << " is alive\n";
+			//std::cout << (int)obj->age << " " << obj->size << " is alive\n";
 #endif
 
 			obj->state = EGCState::WHITE;
-			if (!move(obj, data.toRegion)) {
-				data.liveIndex = i;
-				return;
+
+			if ((regions[data.toRegion].usedSize + obj->size) >= MAX_REGION_CAPACITY) {
+				regions[data.toRegion].isFull = true;
+
+				m.lock();
+				if(data.toRegion == peekUnsued()) popUnused();
+				data.toRegion = peekUnsued();
+				m.unlock();
 			}
 
-			//live.push_back(ref);
+			move(obj, data.toRegion);
 
 		}
 #ifdef _DEBUG 
@@ -277,7 +299,14 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 	regions[data.fromRegion].liveNodes.reset();
 }
 
-void GarbageCollector::sweep() { 
+void GarbageCollector::concurrentSweep()
+{
+	onSweep = true;
+	std::thread markThread([this]() { this->sweep(); onSweep = false; });
+	markThread.detach();
+}
+
+void GarbageCollector::sweep() {
 
 	//int i = youngRegions.size();
 	std::deque<SweepData> dec;
@@ -287,17 +316,18 @@ void GarbageCollector::sweep() {
 			dec.push_back(SweepData(region, -1));
 	}
 
-	do
+	
 	{
 		//int sweepSize = sweepRegions.size();
 		std::mutex m;
-		ThreadPool threads(4);
+		ThreadPool threads(MAX_GC_THREAD);
+		int initialToRegion = peekUnsued();
 		for (auto& region : dec) {
 			//int region = youngRegions.front();
 			//youngRegions.pop_front();
 			//SweepData* ptr = region;
 			//region.toRegion = 2000;
-			region.toRegion = popLiveOrUnused();
+			region.toRegion = initialToRegion;
 			threads.EnqueueJob([this, &region, &m]() {
 				//region.toRegion = toRegion;
 				this->sweep2(region, m);
@@ -307,29 +337,22 @@ void GarbageCollector::sweep() {
 			//i--;
 		}
 
-		for (auto region : dec) {
-			pushUnused(region.fromRegion);
-			if (regions[region.toRegion].usedSize <= 0)
-				pushUnused(region.toRegion);
-			else if (region.liveIndex != 0) { // liveIndex가 시작값인 0과 같지 않다면
-				//assert(region.toRegion == liveRegions.front(), "예외 발생 이유는 나두 몰라 ㅋ");
-				if (region.toRegion == liveRegions.front()) {
-					fullRegions.push_back(liveRegions.front());
-					liveRegions.pop_front();
-				}
-			}
-			else {
-				//isFailure = true;
-				//sweepRegions.erase(region.toRegion);
-				liveRegions.push_back(region.toRegion);
-				std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
-			}
-		}
+		
 
-	} while (0);
+	}
 
 	
+	for (auto region : dec) {
+		pushUnused(region.fromRegion);
 
+		if (region.toRegion == peekUnsued()) popUnused();
+
+		if (regions[region.toRegion].usedSize <= 0)
+			pushUnused(region.toRegion);
+		else {
+			//std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
+		}
+	}
 	//match.clear();
 	//sweepRegions.clear();
 	/*for (auto m : refs) {
@@ -343,7 +366,8 @@ void* GarbageCollector::Allocate(size_t _size) {
 
 	if (onGC){
 		if (!onMarking) {
-			sweep();
+			finMark();
+			concurrentSweep();
 			onGC = false;
 		}
 	}
@@ -357,6 +381,7 @@ void* GarbageCollector::Allocate(size_t _size) {
 	v->size = ACTUAL_SIZEOF(size);
 	v->state = EGCState::WHITE;
 	v->regionID = eden;
+	v->forwardPointer = GET_OBJ(v);
 	v->age = 0;
 #ifdef _DEBUG
 	//std::cout << v << " " << v->size << '\n';
@@ -371,10 +396,10 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 	unsigned int size = tag->size;
 	
 	
-	if ((regions[toRegion].usedSize + size) >= MAX_REGION_CAPACITY) {
+	/*if ((regions[toRegion].usedSize + size) >= MAX_REGION_CAPACITY) {
 		regions[toRegion].isFull = true;
 		return nullptr;
-	}
+	}*/
 
 	tag->regionID = toRegion;
 	tag->age++;
@@ -383,7 +408,7 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 	void* newAddr = currentRegionAddress(toRegion);
 
 	memcpy(newAddr, exAddr, size);
-	regions[toRegion].usedSize += size;
+	regions[toRegion].usedSize.fetch_add(size);
 
 	reinterpret_cast<AllocObj*>(newAddr)->forwardPointer = GET_OBJ(newAddr);
 	tag->forwardPointer = GET_OBJ(newAddr);

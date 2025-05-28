@@ -1,14 +1,75 @@
-﻿  GarbageCollector.cpp
-C:\Users\chakh\source\repos\reflect\Project11\Project11\ObjectReflector.h(45,3): warning C4984: 'if constexpr' is a C++17 language extension
-C:\Users\chakh\source\repos\reflect\Project11\Project11\ObjectReflector.h(85,3): warning C4984: 'if constexpr' is a C++17 language extension
-C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(153,14): warning C4930: 'std::thread markThread(void)': prototyped function not called (was a variable definition intended?)
-C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(195,8): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\chakh\source\repos\reflect\Project11\Project11\GarbageCollector.cpp(285,11): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  Generating code
-  9 of 2170 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    13 functions had inline decision re-evaluated but remain unchanged
-  Finished generating code
-  Project11.vcxproj -> C:\Users\chakh\source\repos\reflect\Project11\x64\Release\Project11.exe
-  'pwsh.exe' is not recognized as an internal or external command,
-  operable program or batch file.
+﻿  DeriveTest.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(93,51): error C2280: 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<void *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(159,56): error C2280: 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<GCPointer *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+  GarbageCollector.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(93,51): error C2280: 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<void *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(159,56): error C2280: 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<GCPointer *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.cpp(107,27): warning C4267: '=': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.cpp(247,8): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.cpp(365,11): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  main.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(93,51): error C2280: 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<void *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(159,56): error C2280: 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<GCPointer *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+  MethodReflector.cpp
+  ObjectReflector.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+  PropertyReflector.cpp
+  Reflection.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(93,51): error C2280: 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<void *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(159,56): error C2280: 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<GCPointer *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+  TestClass.cpp
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(44,2): message : 이 진단은 컴파일러 생성 함수 'ObjectReflector::ObjectReflector(void (__cdecl *)(ObjectReflector *),TARGS *...)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr'은 C++17 언어 확장입니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\ObjectReflector.h(83,7): message : 이 진단은 컴파일러 생성 함수 'void ObjectReflector::registerProperty(std::string,int)'에서 수행되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(93,51): error C2280: 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<void *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<void *>::AtomicArray(const AtomicArray<void *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(159,56): error C2280: 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 삭제된 함수를 참조하려고 합니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 컴파일러에서 여기에 'AtomicArray<GCPointer *>::AtomicArray'을(를) 생성했습니다.
+C:\Users\User\Mapppp\reflection\(NOT IMPLMENTTED)Project11 - DANGUROUS FEATURES\Project11\GarbageCollector.h(77,1): message : 'AtomicArray<GCPointer *>::AtomicArray(const AtomicArray<GCPointer *> &)': 데이터 멤버이(가) 삭제되거나 액세스할 수 없는 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)' 함수를 호출하므로 함수가 암시적으로 삭제되었습니다.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\atomic(2182,5): message : 'std::atomic<unsigned __int64>::atomic(const std::atomic<unsigned __int64> &)': 함수가 명시적으로 삭제되었습니다.
