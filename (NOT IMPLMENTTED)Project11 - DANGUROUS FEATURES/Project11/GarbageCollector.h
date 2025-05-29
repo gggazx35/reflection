@@ -13,12 +13,7 @@
 #define MAX_GC_THREAD 1
 
 enum class EGCState : unsigned char {
-	WHITE,
-	GRAY,
-	BLACK
-};
-
-enum class EGCColor : unsigned char {
+	NONE,
 	WHITE,
 	GRAY,
 	BLACK
@@ -27,7 +22,7 @@ enum class EGCColor : unsigned char {
 class AllocObj {
 public:
 	volatile EGCState state;
-	char age;
+	unsigned char age;
 	unsigned short regionID;
 	unsigned int size;
 	ObjectReflector* reflector;
@@ -204,12 +199,10 @@ public:/*
 	}
 
 	inline void pushLive(void* live) {
+		GET_TAG(live)->state = EGCState::BLACK;
 		int rid = GET_TAG(live)->regionID;
 		//GET_TAG(live)->state = EGCState::WHITE;
 		regions[rid].pushLive(live);
-		if (!sweepRegions.count(rid)) {
-			sweepRegions.emplace(rid);
-		}
 
 		//std::cout << live << "is Alive\n";
 	}
@@ -235,7 +228,7 @@ public:
 	}
 
 	inline GCMember<T>& operator=(const GCMember<T>& other) {
-		ptr = reinterpret_cast<void*>(other);
+		ptr = reinterpret_cast<void*>(other.get());
 		if (GarbageCollector::get()->onMarking) {
 			if (remark) {
 				GarbageCollector::get()->insertDirtyCard(this);
@@ -258,7 +251,7 @@ public:
 
 	inline T* operator->() {
 #ifdef _DEBUG
-		if (!ptr) assert("nullptr referenced");
+		if (!GET_TAG(ptr)->forwardPointer) assert("nullptr referenced");
 #endif
 		ptr = GET_TAG(ptr)->forwardPointer;
 		return reinterpret_cast<T*>(ptr);

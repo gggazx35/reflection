@@ -15,15 +15,6 @@ GarbageCollector::GarbageCollector()
 	eden = popUnused();
 }
 
-//void GarbageCollector::mark() {
-//	for (auto ref : refs) {
-//		if (ref->ptr){ 
-//			markRef(ref->ptr);
-//			GET_TAG(ref->ptr)->state = EGCState::LATER;
-//		}
-//	}
-//}
-// to impl set gray when ref
 void GarbageCollector::mark() {
 	//pushUnused(eden);
 	//youngRegions.push_;back(eden);
@@ -69,9 +60,7 @@ void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 		GCPointer* val = ref->As<GCPointer>(self);
 		if (val->get()) {
 			//registerGray(val);
-			if (GET_TAG(val)->state == EGCState::WHITE) {
-				registerGray(val);
-			}
+			registerGray(val);
 			//if (match.count(val) == 0) 
 			/*m.lock();
 			referenceMatch[val->get()].push_back(val);
@@ -79,7 +68,10 @@ void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 		}
 	}
 	m.lock();
-	GET_TAG(self)->state = EGCState::BLACK;
+	if (!self) {
+		printf("errrrrror");
+		abort();
+	}
 	pushLive(self);
 	m.unlock();
 	//std::cout << "name was " << refs->name << "\n";
@@ -108,8 +100,8 @@ void GarbageCollector::grayOut()
 			for (; i < graySize; i++) {
 				GCPointer* curr = gray[i];
 				//if (curr->remark == true) {
-				//threads.EnqueueJob([this, curr, &m]() { this->markRef(curr, m); });
-				this->markRef(curr, m);
+				threads.EnqueueJob([this, curr, &m]() { this->markRef(curr, m); });
+				//this->markRef(curr, m);
 					//gray.pop_front();
 				//}
 			}
@@ -152,8 +144,8 @@ void GarbageCollector::startGC()
 			onGC = true;
 			while (onSweep == true);
 			mark();
-			
-			std::thread markThread([this]() { onMarking = true; this->grayOut(); onMarking = false; });
+			onMarking = true;
+			std::thread markThread([this]() { this->grayOut(); onMarking = false; });
 			markThread.detach();
 		}
 		else {
@@ -248,10 +240,7 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 	int i = regions[data.fromRegion].liveNodes.getSize();
 	int age = regions[data.fromRegion].age;
 
-	if (data.liveIndex != 0)
-		i = data.liveIndex;
-	else
-		i--;
+	i--;
 	while (i >= 0) {
 		void* ref = liveList[i];
 		auto obj = GET_TAG(ref);
@@ -275,9 +264,13 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 
 		}
 #ifdef _DEBUG 
-		else
+		else if (obj->state == EGCState::WHITE)
 			std::cout << ((unsigned int)obj->state) << " has been deleted now size is " << obj->size << '\n';
 #endif
+		else {
+			printf("errrrrrrrrrrror");
+			abort();
+		}
 		i--;
 	}
 
@@ -305,7 +298,7 @@ void GarbageCollector::concurrentSweep()
 {
 	onSweep = true;
 	std::thread markThread([this]() { this->sweep(); onSweep = false; });
-	markThread.detach();
+	markThread.join();
 }
 
 void GarbageCollector::sweep() {
@@ -314,7 +307,7 @@ void GarbageCollector::sweep() {
 	std::deque<SweepData> dec;
 
 	for (auto region : sweepRegions) {
-		if (region != eden)
+		//if (region != eden)
 			dec.push_back(SweepData(region, -1));
 	}
 
@@ -343,7 +336,14 @@ void GarbageCollector::sweep() {
 
 	}
 
-	
+	/*auto& edenRefs = regions[eden].liveNodes;
+	if (!edenRefs.empty()) {
+		for (int i = 0; i < edenRefs.getSize(); i++) {
+			GET_TAG(edenRefs[i])->state = EGCState::WHITE;
+		}
+	}
+	edenRefs.reset();*/
+
 	for (auto region : dec) {
 		pushUnused(region.fromRegion);
 
@@ -352,16 +352,10 @@ void GarbageCollector::sweep() {
 		if (regions[region.toRegion].usedSize <= 0)
 			pushUnused(region.toRegion);
 		else {
-			//std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
+			std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
 		}
 	}
-	auto& edenRefs = regions[eden].liveNodes;
-	if (!edenRefs.empty()) {
-		for (int i = 0; i < edenRefs.getSize(); i++) {
-			GET_TAG(edenRefs[i])->state = EGCState::WHITE;
-		}
-	}
-	edenRefs.reset();
+	
 
 
 	//match.clear();
@@ -411,7 +405,7 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 		regions[toRegion].isFull = true;
 		return nullptr;
 	}*/
-
+	tag->state = EGCState::WHITE;
 	tag->regionID = toRegion;
 	tag->age++;
 
@@ -421,7 +415,10 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 	memcpy(newAddr, exAddr, size);
 	regions[toRegion].usedSize.fetch_add(size);
 
+
 	reinterpret_cast<AllocObj*>(newAddr)->forwardPointer = GET_OBJ(newAddr);
 	tag->forwardPointer = GET_OBJ(newAddr);
+
+	std::cout << "faushifyha " << (unsigned int)reinterpret_cast<AllocObj*>(newAddr)->forwardPointer << '\n';
 	return newAddr;
 }

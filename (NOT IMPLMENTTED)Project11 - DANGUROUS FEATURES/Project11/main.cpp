@@ -4,6 +4,7 @@
 //#include "TestClass.h"
 #include <iostream>
 #include <time.h>
+
 ////#define MAX_OBJECT_SIZE 12800
 ////class GCObject;
 ////class GCPointer;
@@ -204,7 +205,12 @@ int main() {
 	std::cout << TypeResolver<DTest>::get()->isAChildOf(TypeResolver<TestClass>::get()) << '\n';
 	std::cout << TypeResolver<Derive2Test>::get()->isAChildOf(TypeResolver<DeriveTest>::get()) << '\n';
 	std::cout << TypeResolver<TTest>::get()->isAChildOf(TypeResolver<TestClass>::get()) << '\n';
+	AtomicArray<void*> array(20);
+	array.append(gco.get());
+	array.append(gcob.get());
 
+	std::cout << array[0] << '\n';
+	std::cout << array[1] << GET_TAG(array[1])->forwardPointer << '\n';
 
 
 	std::cout << TypeResolver<Derive2Test>::get()->isSame(TypeResolver<DeriveTest>::get()) << '\n';
@@ -220,7 +226,7 @@ int main() {
 	//gcob = new GCObjectable();
 	gcob->one();
 	gco->dude->one();
-	for (int i = 0; i < 200000; i++) {
+	for (int i = 0; i < 100000; i++) {
 		//gco->dude = new GCObjectable();
 		//if (i == 0) gcob.ptr = gco->dude;
 		gco->buddy = new GCObjectable();
