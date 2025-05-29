@@ -99,10 +99,10 @@ int main() {
 	std::cout << TypeResolver<poss>::get()->name << '\n';
 	std::cout << TypeResolver<OK>::get()->isChildOf(TypeResolver<poss>::get()) << '\n';
 	std::cout << TypeResolver<OK>::get()->isSuperOf(TypeResolver<poss>::get()) << '\n';
-	std::cout << (new GCObjectable)->getReflector()->isSame(TypeResolver<GCObjectable>::get());
+	std::cout << TypeCast::cast<GCObject>(new GCObjectable) << '\n';
 
 	if (TypeCast::cast<GCObject>(new GCObjectable)) {
-		printf("fahsoihf");
+		printf("cast into GCObject\n");
 	}
 
 	for (int i = 0; i < 300000; i++) {
@@ -111,7 +111,7 @@ int main() {
 		gco->buddy = new GCObjectable();
 		gco->buddy = new GCObjectable();
 		gco->buddy2 = new GCObject();
-		if (i == 55000) gco->dude = TypeCast::cast<GCObjectable>(gco->buddy);
+		if (i == 55000) gco->dude = TypeCast::downcast<GCObjectable>(gco->buddy);
 		//std::cout << "size is" << GET_TAG(gco->buddy)->size << "\n\n\n\n\n";
 		//if (GET_REFLECTOR(gco.ptr)->isAChildOf(GET_REFLECTOR(gco->buddy2))) {
 		//}
