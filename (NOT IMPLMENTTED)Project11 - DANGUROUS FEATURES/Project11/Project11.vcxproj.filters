@@ -71,5 +71,8 @@
     <ClInclude Include="GCPointer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TypeCast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

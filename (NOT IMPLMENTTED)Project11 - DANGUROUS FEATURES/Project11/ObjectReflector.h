@@ -35,7 +35,7 @@ public:
 	//	hash = typeid(Tx).hash_code();
 	//}*/
 
-	static unsigned char reflation[20][20];
+	static unsigned char reflation[40][40];
 	static int refl_index;
 
 	//ObjectReflector(void (*init)(ObjectReflector*));

@@ -147,6 +147,7 @@
     <ClInclude Include="Reflection.h" />
     <ClInclude Include="TestClass.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="TypeCast.h" />
     <ClInclude Include="TypeResolver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

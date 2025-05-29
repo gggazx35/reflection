@@ -1,7 +1,7 @@
 //#include "TypeManager.h"
 #include "ObjectReflector.h"
 
-unsigned char ObjectReflector::reflation[20][20] = {0};
+unsigned char ObjectReflector::reflation[40][40] = {0};
 int ObjectReflector::refl_index = 0;
 //class TypeManager;
 //

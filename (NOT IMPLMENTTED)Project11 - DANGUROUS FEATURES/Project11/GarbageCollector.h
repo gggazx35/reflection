@@ -19,6 +19,13 @@ enum class EGCState : unsigned char {
 	BLACK
 };
 
+enum class EGCStep : unsigned char {
+	NON_GC,
+	RUNNING,
+	FINAL_MARK,
+	FINAL_CLEANUP,
+};
+
 class AllocObj {
 public:
 	volatile EGCState state;
@@ -128,6 +135,7 @@ public:/*
 	std::deque<int> unusedRegions;
 	std::deque<int> liveRegions;
 	std::deque<int> fullRegions;
+	std::deque<SweepData> dec;
 	//std::deque<int> markedRegions;
 	//size_t allocatedMemory = 0;
 	//std::unordered_map<int, void**> liveNodes;
@@ -147,29 +155,32 @@ public:/*
 
 	std::unordered_set<int> sweepRegions;
 	std::list<GCPointer*> refs;
-	std::list<GCPointer*> dirtyCard;
+	std::list<void*> dirtyCard;
 	//std::deque<GCPointer*> gray;
-	AtomicArray<GCPointer*> gray = AtomicArray<GCPointer*>(100);
+	AtomicArray<void*> gray = AtomicArray<void*>(100);
 	//std::deque<void*> live;
 	//std::list<void*> black;
 	//std::list<void*> live;
 	//std::thread markingThread;
+
+	EGCStep nextStep;
 
 	bool onGC = false;
 	bool onMarking = false;
 	bool onSweep;
 	// stw
 	void mark();
+	void concurrentMark();
 	void finMark();
 	// concurrent
-	void markRef(GCPointer* _this, std::mutex& m);
+	void markRef(void* _this);
 
 
 	void concurrentSweep();
 	void sweep();
 	void sweep2(SweepData& data, std::mutex& m);
 
-	bool cleanUpRegions();
+	void cleanUpRegions();
 
 	void grayOut();
 
@@ -207,11 +218,13 @@ public:/*
 		//std::cout << live << "is Alive\n";
 	}
 
-	inline void insertDirtyCard(GCPointer* _changedRef) {
+	inline void insertDirtyCard(void* _changedRef) {
 		dirtyCard.push_back(_changedRef);
-		GET_TAG(_changedRef->get())->state = EGCState::WHITE;
-		_changedRef->disableRemark();
+		GET_TAG(_changedRef)->state = EGCState::WHITE;
+		//_changedRef->disableRemark();
 	}
+
+	void runCurrentStep();
 
 	static GarbageCollector* get() {
 		static GarbageCollector instance;
@@ -228,29 +241,52 @@ public:
 	}
 
 	inline GCMember<T>& operator=(const GCMember<T>& other) {
-		ptr = reinterpret_cast<void*>(other.get());
 		if (GarbageCollector::get()->onMarking) {
-			if (remark) {
-				GarbageCollector::get()->insertDirtyCard(this);
+			if (ptr != nullptr) {
+				GarbageCollector::get()->insertDirtyCard(this->get());
 				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
 			}
 		}
+		ptr = reinterpret_cast<void*>(other.get());
+		ptr = GET_TAG(ptr)->forwardPointer;
 		return *this;
 	}
 
 	inline GCMember<T>& operator=(T* other) {
-		ptr = reinterpret_cast<void*>(other);
 		if (GarbageCollector::get()->onMarking) {
-			if (remark) {
-				GarbageCollector::get()->insertDirtyCard(this);
+			if (ptr != nullptr) {
+				ptr = GET_TAG(ptr)->forwardPointer;
+				GarbageCollector::get()->insertDirtyCard(this->get());
 				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
 			}
 		}
+		ptr = reinterpret_cast<void*>(other);
+		if(ptr) ptr = GET_TAG(ptr)->forwardPointer;
 		return *this;
+	}
+
+	inline bool operator==(T* other) {
+
+		ptr = GET_TAG(ptr)->forwardPointer;
+		other = GET_TAG(other)->forwardPointer;
+		return ptr == other;
+	}
+
+	inline bool operator!=(T* other) {
+		return !(this->operator==(other));
+	}
+
+	inline bool operator==(const GCMember<T>& other) {
+		return ptr == (T*)other.get();
+	}
+
+	inline bool operator!=(const GCMember<T>& other) {
+		return !(this->operator==(other));
 	}
 
 	inline T* operator->() {
 #ifdef _DEBUG
+		//if (!ptr) assert("nullptr referenced");
 		if (!GET_TAG(ptr)->forwardPointer) assert("nullptr referenced");
 #endif
 		ptr = GET_TAG(ptr)->forwardPointer;
