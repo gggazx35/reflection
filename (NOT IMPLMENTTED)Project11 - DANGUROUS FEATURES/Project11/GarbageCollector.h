@@ -207,10 +207,9 @@ public:/*
 		int rid = GET_TAG(live)->regionID;
 		//GET_TAG(live)->state = EGCState::WHITE;
 		regions[rid].pushLive(live);
-		/*if (!sweepRegions.count(rid)) {
+		if (!sweepRegions.count(rid)) {
 			sweepRegions.emplace(rid);
-			youngRegions.push_back(rid);
-		}*/
+		}
 
 		//std::cout << live << "is Alive\n";
 	}

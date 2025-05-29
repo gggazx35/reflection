@@ -59,7 +59,6 @@ void GarbageCollector::finMark() {
 void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 	_this->disableRemark();
 	void* self = _this->ptr;
-	GET_TAG(self)->state = EGCState::BLACK;
 	auto refs = GET_REFLECTOR(self);
 	if (!refs) return;
 
@@ -79,8 +78,10 @@ void GarbageCollector::markRef(GCPointer* _this, std::mutex& m) {
 			m.unlock();*/
 		}
 	}
+	m.lock();
+	GET_TAG(self)->state = EGCState::BLACK;
 	pushLive(self);
-
+	m.unlock();
 	//std::cout << "name was " << refs->name << "\n";
 	//gray.pop_front();
 }
@@ -107,7 +108,8 @@ void GarbageCollector::grayOut()
 			for (; i < graySize; i++) {
 				GCPointer* curr = gray[i];
 				//if (curr->remark == true) {
-				threads.EnqueueJob([this, curr, &m]() { this->markRef(curr, m); });
+				//threads.EnqueueJob([this, curr, &m]() { this->markRef(curr, m); });
+				this->markRef(curr, m);
 					//gray.pop_front();
 				//}
 			}
@@ -274,7 +276,7 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 		}
 #ifdef _DEBUG 
 		else
-			std::cout << obj << " has been deleted now size is " << obj->size << '\n';
+			std::cout << ((unsigned int)obj->state) << " has been deleted now size is " << obj->size << '\n';
 #endif
 		i--;
 	}
@@ -353,6 +355,15 @@ void GarbageCollector::sweep() {
 			//std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
 		}
 	}
+	auto& edenRefs = regions[eden].liveNodes;
+	if (!edenRefs.empty()) {
+		for (int i = 0; i < edenRefs.getSize(); i++) {
+			GET_TAG(edenRefs[i])->state = EGCState::WHITE;
+		}
+	}
+	edenRefs.reset();
+
+
 	//match.clear();
 	//sweepRegions.clear();
 	/*for (auto m : refs) {

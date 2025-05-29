@@ -220,7 +220,7 @@ int main() {
 	//gcob = new GCObjectable();
 	gcob->one();
 	gco->dude->one();
-	for (int i = 0; i < 20000; i++) {
+	for (int i = 0; i < 200000; i++) {
 		//gco->dude = new GCObjectable();
 		//if (i == 0) gcob.ptr = gco->dude;
 		gco->buddy = new GCObjectable();
