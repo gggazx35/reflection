@@ -22,7 +22,9 @@ void GarbageCollector::mark() {
 	//youngRegions.push_;back(eden);
 
 	eden = popUnused();
+#ifdef _DEBUG
 	std::cout << "mark started\n";
+#endif
 	for (auto ref : refs) {
 		if (ref->ptr) {
 			registerGray(ref);
@@ -30,6 +32,7 @@ void GarbageCollector::mark() {
 			//referenceMatch[ref->ptr].push_back(ref);
 		}
 	}
+	onMarking = true;
 	//eden = popUnused();
 }
 
@@ -44,7 +47,7 @@ void GarbageCollector::concurrentMark() {
 
 void GarbageCollector::finMark() {
 
-	for (auto ref : refs) {
+	/*for (auto ref : refs) {
 		if (ref->ptr) {
 			registerGray(ref);
 		}
@@ -55,7 +58,7 @@ void GarbageCollector::finMark() {
 			markRef(ref);
 	}
 	dirtyCard.clear();
-	grayOut();
+	grayOut();*/
 }
 
 void GarbageCollector::markRef(void* _this) {
@@ -171,8 +174,9 @@ void GarbageCollector::startGC()
 	runCurrentStep();
 
 	finish = clock();
-
+#ifdef _DEBUG
 	std::cout << "gc taks " << finish - start << std::endl;
+#endif
 }
 
 void GarbageCollector::pushUnused(int region)
@@ -273,14 +277,11 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 			move(obj, data.toRegion);
 
 		}
-#ifdef _DEBUG 
-		else if (obj->state == EGCState::WHITE)
-			std::cout << ((unsigned int)obj->state) << " has been deleted now size is " << obj->size << '\n';
-#endif
-		else {
-			printf("errrrrrrrrrrror");
-			abort();
-		}
+//#ifdef _DEBUG 
+//		else if (obj->state == EGCState::WHITE)
+//				std::cout << ((unsigned int)obj->state) << " has been deleted now size is " << obj->size << '\n';
+//		}
+//#endif
 		i--;
 	}
 

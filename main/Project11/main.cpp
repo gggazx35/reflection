@@ -104,14 +104,21 @@ int main() {
 	if (TypeCast::cast<GCObject>(new GCObjectable)) {
 		printf("cast into GCObject\n");
 	}
-
-	for (int i = 0; i < 300000; i++) {
+	for (int i = 0; i < 1000000; i++) {
 		//gco->dude = new GCObjectable();
 		//if (i == 0) gcob.ptr = gco->dude;
 		gco->buddy = new GCObjectable();
 		gco->buddy = new GCObjectable();
 		gco->buddy2 = new GCObject();
-		if (i == 55000) gco->dude = TypeCast::downcast<GCObjectable>(gco->buddy);
+		if (i == 5000) gco->dude = TypeCast::downcast<GCObjectable>(gco->buddy);
+
+		gco->buddy = new GCObjectable();
+		gco->buddy = new GCObjectable();
+		gco->buddy2 = new GCObject();
+
+		gco->buddy = new GCObjectable();
+		gco->buddy = new GCObjectable();
+		gco->buddy2 = new GCObject();
 		//std::cout << "size is" << GET_TAG(gco->buddy)->size << "\n\n\n\n\n";
 		//if (GET_REFLECTOR(gco.ptr)->isAChildOf(GET_REFLECTOR(gco->buddy2))) {
 		//}
@@ -124,9 +131,7 @@ int main() {
 	pro->truea = 20;
 	finish = clock();
 	
-	std::cout << TypeResolver<poss>::get()->name << '\n';
-	std::cout << TypeResolver<OK>::get()->isChildOf(TypeResolver<poss>::get()) << '\n';
-	std::cout << TypeResolver<OK>::get()->isSuperOf(TypeResolver<poss>::get()) << '\n';
+	std::cout << "allocation done by " << finish - start << "\n";
 	//std::cout << GET_TAG(gco.ptr)->reflector->name << '\n';
 
 	//std::cout << "casted " << cast<poss>(newPoss) << '\n';

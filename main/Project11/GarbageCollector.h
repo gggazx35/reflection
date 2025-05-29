@@ -230,7 +230,7 @@ public:/*
 
 	inline void insertDirtyCard(void* _changedRef) {
 		dirtyCard.push_back(_changedRef);
-		GET_TAG(_changedRef)->state = EGCState::WHITE;
+		//GET_TAG(_changedRef)->state = EGCState::WHITE;
 		//_changedRef->disableRemark();
 	}
 
@@ -266,8 +266,8 @@ public:
 		if (GarbageCollector::get()->onMarking) {
 			if (ptr != nullptr) {
 				ptr = GET_TAG(ptr)->forwardPointer;
-				GarbageCollector::get()->insertDirtyCard(this->get());
-				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
+				//GarbageCollector::get()->insertDirtyCard(this->get());
+				//std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
 			}
 		}
 		ptr = reinterpret_cast<void*>(other);
