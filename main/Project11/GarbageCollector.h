@@ -51,13 +51,23 @@ private:
 	T* data;
 	std::atomic<size_t> size;
 public:
+	AtomicArray<T>() {
+		data = nullptr;
+		size.store(0);
+	}
 	AtomicArray<T>(size_t initalSize) {
 		data = new T[initalSize];
 		size.store(0);
 	}
 	~AtomicArray<T>() {
-		delete[] data;
+		if(data) delete[] data;
 	}
+
+	void reserve(size_t newSize) {
+		if(data) delete[] data;
+		data = new T[newSize];
+	}
+
 	inline void append(T value) {
 		data[size.load()] = value;
 		size.fetch_add(1);
@@ -90,7 +100,7 @@ public:
 	int age;
 	bool isFull;
 	//void** liveNodes;
-	AtomicArray<void*> liveNodes = AtomicArray<void*>(20);
+	AtomicArray<void*> liveNodes;
 
 	inline void pushLive(void* _live) {
 		liveNodes.append(_live);
@@ -157,7 +167,7 @@ public:/*
 	std::list<GCPointer*> refs;
 	std::list<void*> dirtyCard;
 	//std::deque<GCPointer*> gray;
-	AtomicArray<void*> gray = AtomicArray<void*>(100);
+	AtomicArray<void*> gray;
 	//std::deque<void*> live;
 	//std::list<void*> black;
 	//std::list<void*> live;

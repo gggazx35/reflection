@@ -4,11 +4,13 @@
 #include "ThreadPool.h"
 GarbageCollector::GarbageCollector()
 {
+	gray.reserve(100);
 	for (int i = 0; i < regions.size()-1; i++) {
 		//pushUnused(i);
 		unusedRegions.push_back(i);
 		//regions[i].memory = new char[MAX_REGION_CAPACITY];
 		regions[i].memory = ((char*)(memoryHanlde) + (i * MAX_REGION_CAPACITY));
+		regions[i].liveNodes.reserve(200);
 		//regions[i].liveNodes = new void*[64];
 	}
 	

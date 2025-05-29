@@ -84,8 +84,8 @@
 
 typedef poss stupid;
 int main() {
-	auto gco = GCPtr<GCObjectable>(new GCObjectable());
-	auto gcob = GCPtr<GCObjectable>(new GCObjectable());
+	GCPtr<GCObjectable> gco(new GCObjectable());
+	GCPtr<GCObjectable> gcob(new GCObjectable());
 	
 	time_t start, finish;
 	//double duration;
@@ -120,7 +120,7 @@ int main() {
 	gcob->one();
 	gco->dude->one();
 
-	auto pro = GCPtr<TestClass>(new TestClass());
+	GCPtr<TestClass> pro(new TestClass());
 	pro->truea = 20;
 	finish = clock();
 	
