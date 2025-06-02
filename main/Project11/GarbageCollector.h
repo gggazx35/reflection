@@ -229,7 +229,8 @@ public:/*
 	}
 
 	inline void insertDirtyCard(void* _changedRef) {
-		dirtyCard.push_back(_changedRef);
+		if(GET_TAG(_changedRef)->state == EGCState::WHITE)
+			dirtyCard.push_back(_changedRef);
 		//GET_TAG(_changedRef)->state = EGCState::WHITE;
 		//_changedRef->disableRemark();
 	}

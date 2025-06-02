@@ -99,7 +99,7 @@ public:
 	}
 
 	inline bool isSuperOf(ObjectReflector* _other) const {
-		return reflation[N][_other->N] & (EMatch::kSuperOf | EMatch::kSame);
+		return reflation[N][_other->N] & (EMatch::kSuperOf);
 	}
 
 	inline bool isChildOf(ObjectReflector* _other) const {
@@ -111,7 +111,7 @@ public:
 	}
 
 	inline bool isASuperOf(ObjectReflector* _other) const {
-		return reflation[N][_other->N] & (EMatch::kIsASuperOf);
+		return reflation[N][_other->N] & (EMatch::kIsASuperOf | EMatch::kSame);
 	} 
 
 	void markClassTree();

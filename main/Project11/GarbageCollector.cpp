@@ -52,13 +52,13 @@ void GarbageCollector::finMark() {
 			registerGray(ref);
 		}
 	}
-
+*/
 	for (auto ref : dirtyCard) {
 		if(ref)
 			markRef(ref);
 	}
 	dirtyCard.clear();
-	grayOut();*/
+	//grayOut();
 }
 
 void GarbageCollector::markRef(void* _this) {

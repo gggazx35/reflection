@@ -33,7 +33,7 @@ __REFLECTION_START(type)
 static void initTypeDescriptor(ObjectReflector* obj); \
 static ObjectReflector reflect; \
 void* operator new(size_t size); \
-static ObjectReflector* getReflector() { return &reflect; } \
+ObjectReflector* getReflector() { return GET_REFLECTOR(this); } \
 
 #define REFLECT_INTERFACE  \
 static void initTypeDescriptor(ObjectReflector* obj); \
