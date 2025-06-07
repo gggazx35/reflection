@@ -128,6 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CObject.cpp" />
     <ClCompile Include="DeriveTest.cpp" />
     <ClCompile Include="GarbageCollector.cpp" />
     <ClCompile Include="main.cpp" />
@@ -138,6 +139,7 @@
     <ClCompile Include="TestClass.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CObject.h" />
     <ClInclude Include="DeriveTest.h" />
     <ClInclude Include="GarbageCollector.h" />
     <ClInclude Include="GCPointer.h" />

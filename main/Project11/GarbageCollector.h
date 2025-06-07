@@ -12,12 +12,21 @@
 #define DEFAULT_PADDING 8
 #define MAX_GC_THREAD 1
 
-enum class EGCState : unsigned char {
-	NONE,
-	WHITE,
-	GRAY,
-	BLACK
+class CObject;
+
+class GCPointer {
+protected:
+	CObject* ptr;
+public:
+	std::atomic<bool> remark;
+	inline void enableRemark() { remark = true; }
+	inline void disableRemark() { remark = false; }
+	inline void* get() const { return ptr; }
+
+	friend class GarbageCollector;
 };
+
+
 
 enum class EGCStep : unsigned char {
 	NON_GC,
@@ -25,25 +34,26 @@ enum class EGCStep : unsigned char {
 	FINAL_MARK,
 	FINAL_CLEANUP,
 };
-
-class AllocObj {
-public:
-	volatile EGCState state;
-	unsigned char age;
-	unsigned short regionID;
-	unsigned int size;
-	ObjectReflector* reflector;
-	void* forwardPointer;
-};
+//
+//class AllocObj {
+//public:
+//	volatile EGCState state;
+//	unsigned char age;
+//	unsigned short regionID;
+//	unsigned int size;
+//	ObjectReflector* reflector;
+//	void* forwardPointer;
+//};
 
 class SweepCell {
 	int region;
 };
 
-#define ACTUAL_SIZEOF(size) (size + sizeof(AllocObj))
-#define GET_TAG(x) reinterpret_cast<AllocObj*>(((char*)x) - sizeof(AllocObj))
-#define GET_OBJ(x) reinterpret_cast<void*>(((char*)x) + sizeof(AllocObj))
+#define ACTUAL_SIZEOF(size) (size)
+#define GET_TAG(x) reinterpret_cast<CObject*>(x)
+#define GET_OBJ(x) reinterpret_cast<void*>(x)
 #define GET_REFLECTOR(x) GET_TAG(x)->reflector
+
 
 template<typename T>
 struct AtomicArray {
@@ -140,7 +150,7 @@ public:/*
 
 	// INFO: regions are splited memoryHandle usually uses when allocating memory referencing liveNodes
 	std::array<Region, 20> regions;
-	
+	std::vector<void**> updateRefs;
 	// WARNING: NEVER USE THIS FOR SEARCHING NON-ALLOCATED REGIONS USE 'popUnused()' instead
 	std::deque<int> unusedRegions;
 	std::deque<int> liveRegions;
@@ -160,14 +170,13 @@ public:/*
 	// INFO: this re-matching allocated objects from old address to new address only uses while compacting memory
 	//std::unordered_map<void*, std::list<void**>> match;
 	// INFO: this re-matching allocated objects in reference list from old address to new address only uses while compacting memory
-	std::unordered_map<void*, std::vector<GCPointer*>> referenceMatch;
-
+	std::unordered_map<void*, std::vector<void**>> referenceMatch;
 
 	std::unordered_set<int> sweepRegions;
 	std::list<GCPointer*> refs;
 	std::list<void*> dirtyCard;
 	//std::deque<GCPointer*> gray;
-	AtomicArray<void*> gray;
+	AtomicArray<CObject*> gray;
 	//std::deque<void*> live;
 	//std::list<void*> black;
 	//std::list<void*> live;
@@ -183,12 +192,14 @@ public:/*
 	void concurrentMark();
 	void finMark();
 	// concurrent
-	void markRef(void* _this);
+	void markRef(CObject* _this);
 
 
 	void concurrentSweep();
 	void sweep();
 	void sweep2(SweepData& data, std::mutex& m);
+
+	void cleanUp(int region);
 
 	void cleanUpRegions();
 
@@ -203,6 +214,7 @@ public:/*
 	void compact();
 	void compactRef(void* _this);
 	
+
 	void pushUnused(int region);
 	void mainMark();
 	int popUnused();
@@ -212,28 +224,21 @@ public:/*
 	void registerGray(GCPointer* val);
 
 
-	void* Allocate(size_t size);
-	void* move(AllocObj* tag, int toRegion);
+	void* Allocate(size_t size, ObjectReflector* _reflector);
+	void* move(CObject* tag, int toRegion);
 
 	inline void* currentRegionAddress(int region) {
 		return (regions[region].memory + regions[region].usedSize);
 	}
 
-	inline void pushLive(void* live) {
-		GET_TAG(live)->state = EGCState::BLACK;
-		int rid = GET_TAG(live)->regionID;
-		//GET_TAG(live)->state = EGCState::WHITE;
-		regions[rid].pushLive(live);
-
-		//std::cout << live << "is Alive\n";
+	inline int getRegion(CObject* obj) {
+		int result = (((char*)obj) - memoryHanlde) / MAX_REGION_CAPACITY;
+		return result;
 	}
 
-	inline void insertDirtyCard(void* _changedRef) {
-		if(GET_TAG(_changedRef)->state == EGCState::WHITE)
-			dirtyCard.push_back(_changedRef);
-		//GET_TAG(_changedRef)->state = EGCState::WHITE;
-		//_changedRef->disableRemark();
-	}
+	void pushLive(CObject* live);
+
+	void insertDirtyCard(CObject* _changedRef);
 
 	void runCurrentStep();
 
@@ -242,79 +247,82 @@ public:/*
 		return &instance;
 	}
 };
+//
+//template<typename T>
+//class GCMember : public GCPointer {
+//public:
+//	GCMember<T>() {
+//		ptr = nullptr;
+//		remark = true;
+//	}
+//
+//	inline GCMember<T>& operator=(const GCMember<T>& other) {
+//		if (GarbageCollector::get()->onMarking) {
+//			if (ptr != nullptr) {
+//				GarbageCollector::get()->insertDirtyCard(this->get());
+//				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
+//			}
+//		}
+//		ptr = reinterpret_cast<void*>(other.get());
+//		//ptr = GET_TAG(ptr)->forwardPointer;
+//		return *this;
+//	}
+//
+//	inline GCMember<T>& operator=(T* other) {
+//		if (GarbageCollector::get()->onMarking) {
+//			if (ptr != nullptr) {
+//				//ptr = GET_TAG(ptr)->forwardPointer;
+//				//GarbageCollector::get()->insertDirtyCard(this->get());
+//				//std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
+//			}
+//		}
+//		ptr = reinterpret_cast<void*>(other);
+//		//if(ptr) ptr = GET_TAG(ptr)->forwardPointer;
+//		return *this;
+//	}
+//
+//	inline bool operator==(T* other) {
+//
+//		//ptr = GET_TAG(ptr)->forwardPointer;
+//		//other = GET_TAG(other)->forwardPointer;
+//		return ptr == other;
+//	}
+//
+//	inline bool operator!=(T* other) {
+//		return !(this->operator==(other));
+//	}
+//
+//	inline bool operator==(const GCMember<T>& other) {
+//		return ptr == (T*)other.get();
+//	}
+//
+//	inline bool operator!=(const GCMember<T>& other) {
+//		return !(this->operator==(other));
+//	}
+//
+//	inline T* operator->() {
+//#ifdef _DEBUG
+//		//if (!ptr) assert("nullptr referenced");
+//		if (!GET_TAG(ptr)->forwardPointer) assert("nullptr referenced");
+//#endif
+//		//ptr = GET_TAG(ptr)->forwardPointer;
+//		return reinterpret_cast<T*>(ptr);
+//	}
+//};
 
 template<typename T>
-class GCMember : public GCPointer {
-public:
-	GCMember<T>() {
-		ptr = nullptr;
-		remark = true;
-	}
-
-	inline GCMember<T>& operator=(const GCMember<T>& other) {
-		if (GarbageCollector::get()->onMarking) {
-			if (ptr != nullptr) {
-				GarbageCollector::get()->insertDirtyCard(this->get());
-				std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
-			}
-		}
-		ptr = reinterpret_cast<void*>(other.get());
-		ptr = GET_TAG(ptr)->forwardPointer;
-		return *this;
-	}
-
-	inline GCMember<T>& operator=(T* other) {
-		if (GarbageCollector::get()->onMarking) {
-			if (ptr != nullptr) {
-				ptr = GET_TAG(ptr)->forwardPointer;
-				//GarbageCollector::get()->insertDirtyCard(this->get());
-				//std::cout << static_cast<int>(GET_TAG(this->get())->state) << '\n';
-			}
-		}
-		ptr = reinterpret_cast<void*>(other);
-		if(ptr) ptr = GET_TAG(ptr)->forwardPointer;
-		return *this;
-	}
-
-	inline bool operator==(T* other) {
-
-		ptr = GET_TAG(ptr)->forwardPointer;
-		other = GET_TAG(other)->forwardPointer;
-		return ptr == other;
-	}
-
-	inline bool operator!=(T* other) {
-		return !(this->operator==(other));
-	}
-
-	inline bool operator==(const GCMember<T>& other) {
-		return ptr == (T*)other.get();
-	}
-
-	inline bool operator!=(const GCMember<T>& other) {
-		return !(this->operator==(other));
-	}
-
-	inline T* operator->() {
-#ifdef _DEBUG
-		//if (!ptr) assert("nullptr referenced");
-		if (!GET_TAG(ptr)->forwardPointer) assert("nullptr referenced");
-#endif
-		ptr = GET_TAG(ptr)->forwardPointer;
-		return reinterpret_cast<T*>(ptr);
-	}
-};
-
-template<typename T>
-class GCPtr : public GCMember<T> {
+class GCPtr : public GCPointer {
 public:
 	GCPtr<T>(T* _ptr) {
-		this->ptr = reinterpret_cast<void*>(_ptr);
+		this->ptr = reinterpret_cast<CObject*>(_ptr);
 		GarbageCollector::get()->refs.push_back(this);
 	}
 
 	~GCPtr<T>() {
 		GarbageCollector::get()->refs.remove(this);
+	}
+	inline T* operator->() {
+		return reinterpret_cast<T*>(ptr);
 	}
 };
 

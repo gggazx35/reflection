@@ -83,7 +83,7 @@ public:
 	void registerProperty(std::string str, int offset) {
 		auto prop = new PropertyReflector(offset);
 		
-		if constexpr (std::is_base_of_v<GCPointer, T> == true) {
+		if constexpr (std::is_pointer_v<T> == true) {
 			pointers.push_back(prop);
 		}
 
@@ -113,6 +113,10 @@ public:
 	inline bool isASuperOf(ObjectReflector* _other) const {
 		return reflation[N][_other->N] & (EMatch::kIsASuperOf | EMatch::kSame);
 	} 
+
+	inline int getSize() {
+		return size;
+	}
 
 	void markClassTree();
 	void markIsATree(ObjectReflector* _);

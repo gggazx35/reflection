@@ -1,0 +1,9 @@
+﻿  GarbageCollector.cpp
+C:\Users\chakh\source\repos\reflection\main\Project11\GarbageCollector.h(235,14): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+C:\Users\chakh\source\repos\reflection\main\Project11\GarbageCollector.cpp(117,27): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\chakh\source\repos\reflection\main\Project11\GarbageCollector.cpp(198,14): warning C4930: 'std::thread markThread(void)': prototyped function not called (was a variable definition intended?)
+C:\Users\chakh\source\repos\reflection\main\Project11\GarbageCollector.cpp(259,8): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\chakh\source\repos\reflection\main\Project11\GarbageCollector.cpp(407,11): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  Project11.vcxproj -> C:\Users\chakh\source\repos\reflection\main\x64\Debug\Project11.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.

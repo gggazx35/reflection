@@ -1,10 +1,10 @@
 #pragma once
+
 #include "TypeResolver.h"
 #include "GarbageCollector.h"
 #define __REFLECTION_START(type) \
 void* type::operator new(size_t size) { \
-	void* obj = reinterpret_cast<type*>(GarbageCollector::get()->Allocate(size)); \
-	GET_TAG(obj)->reflector = &type::reflect; \
+	void* obj = reinterpret_cast<type*>(GarbageCollector::get()->Allocate(size, &reflect)); \
 	return obj; \
 } \
 void type::initTypeDescriptor(ObjectReflector* _desc) { \
@@ -32,8 +32,8 @@ __REFLECTION_START(type)
 #define REFLECT  \
 static void initTypeDescriptor(ObjectReflector* obj); \
 static ObjectReflector reflect; \
-void* operator new(size_t size); \
-ObjectReflector* getReflector() { return GET_REFLECTOR(this); } \
+void* operator new(size_t size);  \
+virtual ObjectReflector* getReflector() { return &reflect; };
 
 #define REFLECT_INTERFACE  \
 static void initTypeDescriptor(ObjectReflector* obj); \

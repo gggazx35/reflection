@@ -1,5 +1,5 @@
 #pragma once
-#include "GarbageCollector.h"
+#include "GarbageCollector.h"/*
 namespace TypeCast {
 	template<typename T>
 	bool isCastable(GCMember<T>& _a, ObjectReflector* _b) {
@@ -60,4 +60,4 @@ namespace TypeCast {
 	E* downcast(GCMember<T>& out) {
 		return (isDownCastable(out, TypeResolver<E>::get()) ? reinterpret_cast<E*>(out.get()) : nullptr);
 	}
-}
+}*/

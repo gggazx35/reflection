@@ -1,10 +1,13 @@
-﻿  main.cpp
+﻿  DeriveTest.cpp
+C:\Users\chakh\source\repos\reflection\main\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr' is a C++17 language extension
+C:\Users\chakh\source\repos\reflection\main\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr' is a C++17 language extension
+  main.cpp
 C:\Users\chakh\source\repos\reflection\main\Project11\ObjectReflector.h(46,3): warning C4984: 'if constexpr' is a C++17 language extension
 C:\Users\chakh\source\repos\reflection\main\Project11\ObjectReflector.h(86,3): warning C4984: 'if constexpr' is a C++17 language extension
   Generating code
-  4 of 1833 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  39 of 1923 functions ( 2.0%) were compiled, the rest were copied from previous compilation.
+    3 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Project11.vcxproj -> C:\Users\chakh\source\repos\reflection\main\x64\Release\Project11.exe
   'pwsh.exe' is not recognized as an internal or external command,

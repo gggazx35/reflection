@@ -96,21 +96,21 @@ int main() {
 	gcob->one();
 	gco->dude->one();
 
-	std::cout << TypeResolver<poss>::get()->name << '\n';
-	std::cout << TypeResolver<OK>::get()->isChildOf(TypeResolver<poss>::get()) << '\n';
-	std::cout << TypeResolver<OK>::get()->isSuperOf(TypeResolver<poss>::get()) << '\n';
-	std::cout << TypeCast::cast<GCObject>(new GCObjectable) << '\n';
+	//std::cout << TypeResolver<poss>::get()->name << '\n';
+	//std::cout << TypeResolver<OK>::get()->isChildOf(TypeResolver<poss>::get()) << '\n';
+	//std::cout << TypeResolver<OK>::get()->isSuperOf(TypeResolver<poss>::get()) << '\n';
+	//std::cout << TypeCast::cast<GCObject>(new GCObjectable) << '\n';
 
-	if (TypeCast::cast<GCObject>(new GCObjectable)) {
+	//if (TypeCast::cast<GCObject>(new GCObjectable)) {
 		printf("cast into GCObject\n");
-	}
+	//}
 	for (int i = 0; i < 10000000; i++) {
 		//gco->dude = new GCObjectable();
 		//if (i == 0) gcob.ptr = gco->dude;
 		gco->buddy = new GCObjectable();
 		gco->buddy = new GCObjectable();
 		gco->buddy2 = new GCObject();
-		if (i == 5000) gco->dude = TypeCast::cast<GCObjectable>(gco->buddy);
+		//if (i == 5000) gco->dude = TypeCast::cast<GCObjectable>(gco->buddy);
 
 		gco->buddy = new GCObjectable();
 		gco->buddy = new GCObjectable();

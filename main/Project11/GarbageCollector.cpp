@@ -2,6 +2,10 @@
 #include <iostream>
 #include <thread>
 #include "ThreadPool.h"
+
+
+#include "CObject.h"
+
 GarbageCollector::GarbageCollector()
 {
 	gray.reserve(100);
@@ -22,6 +26,7 @@ void GarbageCollector::mark() {
 	//youngRegions.push_;back(eden);
 
 	eden = popUnused();
+	referenceMatch.clear();
 #ifdef _DEBUG
 	std::cout << "mark started\n";
 #endif
@@ -42,7 +47,7 @@ void GarbageCollector::concurrentMark() {
 		onMarking = false; 
 		nextStep = EGCStep::FINAL_MARK;
 		});
-	markThread.detach();
+	markThread.join();
 }
 
 void GarbageCollector::finMark() {
@@ -52,39 +57,41 @@ void GarbageCollector::finMark() {
 			registerGray(ref);
 		}
 	}
-*/
+*//*
 	for (auto ref : dirtyCard) {
 		if(ref)
 			markRef(ref);
 	}
-	dirtyCard.clear();
+	dirtyCard.clear();*/
 	//grayOut();
 }
 
-void GarbageCollector::markRef(void* _this) {
+void GarbageCollector::markRef(CObject* _this) {
 	//_this->disableRemark();
-	void* self = _this;
-	auto refs = GET_REFLECTOR(self);
+	CObject* self = _this;
+	auto refs = self->getReflector();
 	if (!refs) return;
 
 
 	auto pointers = refs->pointers;
 
 	for (auto ref : pointers) {
-		GCPointer* val = ref->As<GCPointer>(self);
-		if (val->get()) {
+		void** val = ref->As<void*>(self);
+		if (nullptr != (*val)) {
 			//registerGray(val);
 			//registerGray(val)
-			val->ptr = GET_TAG(val->get())->forwardPointer;
-			if(GET_TAG(val->get())->state == EGCState::WHITE)
-				markRef(val->get());
+			//val->ptr = GET_TAG(val->get())->forwardPointer;
+			if (GET_TAG(*val)->state == EGCState::WHITE) {
+				referenceMatch[*val].push_back(val);
+				markRef(reinterpret_cast<CObject*>(*val));
+			}
 		}
 	}
 	if (!self) {
 		printf("errrrrror");
 		abort();
 	}
-	pushLive(self);
+	pushLive((CObject*)self);
 	//std::cout << "name was " << refs->name << "\n";
 	//gray.pop_front();
 }
@@ -109,7 +116,7 @@ void GarbageCollector::grayOut()
 			//grayStart = graySize;
 			graySize = gray.getSize();
 			for (; i < graySize; i++) {
-				void* curr = gray[i];
+				CObject* curr = gray[i];
 				//if (curr->remark == true) {
 				threads.EnqueueJob([this, curr, &m]() { this->markRef(curr); });
 				//this->markRef(curr, m);
@@ -133,12 +140,10 @@ void GarbageCollector::registerGray(GCPointer* val)
 	void* ptr = val->get();
 	//std::cout << GET_TAG(val->get())->forwardPointer << ", " << val->ptr << ", " << (unsigned char)GET_TAG(val->get())->state << '\n';
 
-	val->ptr = GET_TAG(ptr)->forwardPointer;
 	if (GET_TAG(ptr)->state == EGCState::WHITE) {
-		gray.append(val->get());
+		gray.append((CObject*)ptr);
 
 		//GET_TAG(ptr)->state = EGCState::GRAY;
-		val->enableRemark();
 	}
 }
 
@@ -265,7 +270,7 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 
 			obj->state = EGCState::WHITE;
 
-			if ((regions[data.toRegion].usedSize + obj->size) >= MAX_REGION_CAPACITY) {
+			if ((regions[data.toRegion].usedSize + obj->getReflector()->getSize()) >= MAX_REGION_CAPACITY) {
 				regions[data.toRegion].isFull = true;
 
 				m.lock();
@@ -305,9 +310,27 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 	regions[data.fromRegion].liveNodes.reset();
 }
 
+void GarbageCollector::cleanUp(int region)
+{
+	char* memory = regions[region].memory;
+	char* current = memory;
+	char* end = memory + regions[region].usedSize;
+	CObject* obj;
+	while (current < end) {
+		obj = GET_TAG(current);
+		current += obj->getReflector()->getSize();
+
+		if (obj->state != EGCState::BLACK)
+			delete obj;
+
+	}
+
+}
+
 void GarbageCollector::cleanUpRegions()
 {
 	for (auto region : dec) {
+		cleanUp(region.fromRegion);
 		pushUnused(region.fromRegion);
 
 		if (region.toRegion == peekUnsued()) popUnused();
@@ -327,7 +350,7 @@ void GarbageCollector::concurrentSweep()
 	std::thread markThread([this]() { 
 		this->sweep(); 
 		});
-	markThread.detach();
+	markThread.join();
 	
 }
 
@@ -380,9 +403,9 @@ void GarbageCollector::sweep() {
 	}*/
 }
 
-void* GarbageCollector::Allocate(size_t _size) {
+void* GarbageCollector::Allocate(size_t _size, ObjectReflector* _reflector) {
 	int size = _size;
-	AllocObj* v = nullptr;
+	CObject* v = nullptr;
 	if (size < DEFAULT_PADDING) size = DEFAULT_PADDING;
 
 	if (nextStep != EGCStep::NON_GC && nextStep != EGCStep::RUNNING) {
@@ -393,27 +416,25 @@ void* GarbageCollector::Allocate(size_t _size) {
 		v = (AllocObj*)malloc(ACTUAL_SIZEOF(size));
 	}*/
 
-	while ((regions[eden].usedSize + ACTUAL_SIZEOF(size)) >= MAX_REGION_CAPACITY) {
+	while ((regions[eden].usedSize + size) >= MAX_REGION_CAPACITY) {
 		startGC();
 	}
 
-	v = reinterpret_cast<AllocObj*>(regions[eden].memory + (regions[eden].usedSize));
-	v->size = ACTUAL_SIZEOF(size);
-	v->state = EGCState::WHITE;
-	v->regionID = eden;
-	v->forwardPointer = GET_OBJ(v);
-	v->age = 0;
+	v = reinterpret_cast<CObject*>(regions[eden].memory + (regions[eden].usedSize));
+	//v->forwardPointer = GET_OBJ(v);
+	//v->age = 0;
 #ifdef _DEBUG
 	//std::cout << v << " " << v->size << '\n';
 #endif
-	regions[eden].usedSize += ACTUAL_SIZEOF(size);
-	return reinterpret_cast<void*>(((char*)v) + sizeof(AllocObj));
+	regions[eden].usedSize += size;
+	return reinterpret_cast<void*>(v);
 }
 
-void* GarbageCollector::move(AllocObj* tag, int toRegion)
+void* GarbageCollector::move(CObject* tag, int toRegion)
 {
 
-	unsigned int size = tag->size;
+	unsigned int size = tag->getReflector()->getSize();
+	
 	
 	
 	/*if ((regions[toRegion].usedSize + size) >= MAX_REGION_CAPACITY) {
@@ -421,8 +442,7 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 		return nullptr;
 	}*/
 	tag->state = EGCState::WHITE;
-	tag->regionID = toRegion;
-	tag->age++;
+	//tag->regionID = toRegion;
 
 	void* exAddr = tag;
 	void* newAddr = currentRegionAddress(toRegion);
@@ -431,11 +451,29 @@ void* GarbageCollector::move(AllocObj* tag, int toRegion)
 	regions[toRegion].usedSize.fetch_add(size);
 
 
-	reinterpret_cast<AllocObj*>(newAddr)->forwardPointer = GET_OBJ(newAddr);
-	tag->forwardPointer = GET_OBJ(newAddr);
+	if (referenceMatch.count(GET_OBJ(tag)) != 0) {
+		std::vector<void**>& refVec = referenceMatch.at(GET_OBJ(tag));
+		for (auto ref : refVec) {
+			*ref = GET_OBJ(newAddr);
+		}
+	}
 
 	//std::cout << "faushifyha " << (unsigned int)reinterpret_cast<AllocObj*>(newAddr)->forwardPointer << '\n';
 	return newAddr;
+}
+
+void GarbageCollector::pushLive(CObject* live) {
+	GET_TAG(live)->state = EGCState::BLACK;
+	int rid = getRegion(live);
+	regions[rid].pushLive((void*)live);
+
+}
+
+void GarbageCollector::insertDirtyCard(CObject* _changedRef) {
+	if (GET_TAG(_changedRef)->state == EGCState::WHITE)
+		dirtyCard.push_back(_changedRef);
+	//GET_TAG(_changedRef)->state = EGCState::WHITE;
+	//_changedRef->disableRemark();
 }
 
 void GarbageCollector::runCurrentStep()
@@ -449,10 +487,10 @@ void GarbageCollector::runCurrentStep()
 		break;
 	case EGCStep::FINAL_MARK:
 		nextStep = EGCStep::RUNNING;
-		finMark();
 		concurrentSweep();
 		break;
 	case EGCStep::FINAL_CLEANUP:
+		
 		cleanUpRegions();
 		nextStep = EGCStep::NON_GC;
 		break;

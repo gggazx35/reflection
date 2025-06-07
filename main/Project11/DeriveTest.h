@@ -1,5 +1,6 @@
 #pragma once
 #include "TestClass.h"
+#include "CObject.h"
 
 class IImp {
 	using super = void;
@@ -40,9 +41,9 @@ public:
 };
 
 
-class GCObject {
+class GCObject : public CObject {
 public:
-	using super = TestClass;
+	using super = CObject;
 	long long any;
 	GCObject() {
 		//GarbageCollector::registerObject(this);
@@ -52,7 +53,7 @@ public:
 	void one() {
 		any += 200;
 
-		std::cout << (int)GET_TAG(this)->age << ", " << (int)GET_TAG(this)->regionID << ", " << any << ", " << this << '\n';
+		//std::cout << (int)GET_TAG(this)->age << ", " << (int)GET_TAG(this)->regionID << ", " << any << ", " << this << '\n';
 	}
 public:
 
@@ -64,9 +65,9 @@ class GCObjectable : public GCObject {
 public:
 	using super = GCObject;
 public:
-	GCMember<GCObject> buddy;
-	GCMember<GCObject> buddy2;
-	GCMember<GCObjectable> dude;
+	GCObject* buddy;
+	GCObject* buddy2;
+	GCObjectable* dude;
 	REFLECT
 };
 
