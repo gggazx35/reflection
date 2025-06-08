@@ -19,6 +19,14 @@ GarbageCollector::GarbageCollector()
 	}
 	
 	eden = popUnused();
+	nextStep = EGCStep::NON_GC;
+
+
+	std::thread* markThread = new std::thread([this]() {
+		this->gcThread();
+		});
+	m_thread = markThread;
+	markThread->detach();
 }
 
 void GarbageCollector::mark() {
@@ -26,7 +34,6 @@ void GarbageCollector::mark() {
 	//youngRegions.push_;back(eden);
 
 	eden = popUnused();
-	referenceMatch.clear();
 #ifdef _DEBUG
 	std::cout << "mark started\n";
 #endif
@@ -34,35 +41,26 @@ void GarbageCollector::mark() {
 		if (ref->ptr) {
 			registerGray(ref);
 			//match[ref->ptr].push_back(&ref->ptr);
-			//referenceMatch[ref->ptr].push_back(ref);
+			referenceMatch[ref->get()].push_back(ref);
 		}
 	}
-	onMarking = true;
+	nextStep = EGCStep::CONCURRENT_MARK;
 	//eden = popUnused();
 }
 
 void GarbageCollector::concurrentMark() {
-	std::thread markThread([this]() { 
-		this->grayOut(); 
-		onMarking = false; 
-		nextStep = EGCStep::FINAL_MARK;
-		});
-	markThread.join();
+	std::cout << "concurrent mark started\n";
+	grayOut();
 }
 
 void GarbageCollector::finMark() {
 
-	/*for (auto ref : refs) {
-		if (ref->ptr) {
-			registerGray(ref);
-		}
-	}
-*//*
+	std::cout << "final mark started\n";
 	for (auto ref : dirtyCard) {
 		if(ref)
 			markRef(ref);
 	}
-	dirtyCard.clear();*/
+	dirtyCard.clear();
 	//grayOut();
 }
 
@@ -76,14 +74,14 @@ void GarbageCollector::markRef(CObject* _this) {
 	auto pointers = refs->pointers;
 
 	for (auto ref : pointers) {
-		void** val = ref->As<void*>(self);
-		if (nullptr != (*val)) {
+		GCPointer* val = ref->As<GCPointer>(self);
+		if (nullptr != val->get()) {
 			//registerGray(val);
 			//registerGray(val)
 			//val->ptr = GET_TAG(val->get())->forwardPointer;
-			if (GET_TAG(*val)->state == EGCState::WHITE) {
-				referenceMatch[*val].push_back(val);
-				markRef(reinterpret_cast<CObject*>(*val));
+			referenceMatch[val->get()].push_back(val);
+			if (val->get()->state == EGCState::WHITE) {
+				markRef(val->get());
 			}
 		}
 	}
@@ -91,25 +89,20 @@ void GarbageCollector::markRef(CObject* _this) {
 		printf("errrrrror");
 		abort();
 	}
-	pushLive((CObject*)self);
+	pushLive(self);
 	//std::cout << "name was " << refs->name << "\n";
 	//gray.pop_front();
 }
 
-void GarbageCollector::compact() {
-	for (auto ref : refs) {
-		if (ref->ptr) compactRef(ref->ptr);
-	}
-}
 
 void GarbageCollector::grayOut()
 {
 	//int graySize = _graySize;
 	//auto i = gray.size();{
 	//onMarking = true;
-	std::mutex m;
+	//std::mutex m;
 	{
-		ThreadPool threads(MAX_GC_THREAD);
+		//ThreadPool threads(MAX_GC_THREAD);
 		int graySize = 0;
 		int i = 0;
 		do {
@@ -117,11 +110,7 @@ void GarbageCollector::grayOut()
 			graySize = gray.getSize();
 			for (; i < graySize; i++) {
 				CObject* curr = gray[i];
-				//if (curr->remark == true) {
-				threads.EnqueueJob([this, curr, &m]() { this->markRef(curr); });
-				//this->markRef(curr, m);
-					//gray.pop_front();
-				//}
+				this->markRef(curr);
 			}
 			if (graySize < gray.getSize())
 				continue;
@@ -140,11 +129,11 @@ void GarbageCollector::registerGray(GCPointer* val)
 	void* ptr = val->get();
 	//std::cout << GET_TAG(val->get())->forwardPointer << ", " << val->ptr << ", " << (unsigned char)GET_TAG(val->get())->state << '\n';
 
-	if (GET_TAG(ptr)->state == EGCState::WHITE) {
+	//if (GET_TAG(ptr)->state == EGCState::WHITE) {
 		gray.append((CObject*)ptr);
 
 		//GET_TAG(ptr)->state = EGCState::GRAY;
-	}
+	//}
 }
 
 void GarbageCollector::startGC()
@@ -154,28 +143,6 @@ void GarbageCollector::startGC()
 	//double duration;
 
 	start = clock();
-	//do {
-
-	//	if (onGC == false) {
-	//		onGC = true;
-	//		while (onSweep == true);
-	//		mark();
-	//		onMarking = true;
-	//		std::thread markThread([this]() { this->grayOut(); onMarking = false; });
-	//		markThread.detach();
-	//	}
-	//	else {
-	//		while (onMarking == true);
-	//		//// stop the world ////
-	//		finMark();
-	//		onSweep = true;
-	//		sweep();
-	//		onSweep = false;
-	//		onGC = false;
-	//		/// end stop the world ///
-	//	}
-	//} while (0);
-	while (nextStep == EGCStep::RUNNING);
 	runCurrentStep();
 
 	finish = clock();
@@ -188,6 +155,7 @@ void GarbageCollector::pushUnused(int region)
 {
 	sweepRegions.erase(region);
 	unusedRegions.push_back(region);
+	assert(unusedRegions.size() <= 20);
 	regions[region].age = 0;
 	regions[region].usedSize = 0;
 	regions[region].liveNodes.reset();
@@ -241,18 +209,6 @@ int GarbageCollector::peekUnsued()
 	return unusedRegions.front();
 }
 
-void GarbageCollector::compactRef(void* _this) {
-	//auto refs = GET_REFLECTOR(_this);
-	//for (auto ref : refs->pointers) {
-	//	if (ref) {
-	//		auto ptr = match[*ref->As<void*>(_this)];
-	//		*ref->As<void*>(_this) = ptr;
-
-	//		if (ptr) compactRef(ptr);
-	//	}
-	//}
-	////std::cout << "*ref->As<void*>(this)" << '\n';
-}
 void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 	AtomicArray<void*>& liveList = regions[data.fromRegion].liveNodes;
 	
@@ -290,22 +246,6 @@ void GarbageCollector::sweep2(SweepData& data, std::mutex& m) {
 		i--;
 	}
 
-	//pushUnused(fromRegion);
-
-
-	//if (regions[data.toRegion].usedSize > 0) {
-	//	regions[data.toRegion].age = age + 1;
-	//	//youngRegions.push_back(toRegion);
-	//	//sweepRegions.emplace(toRegion);
-	//	
-	//}
-	//else {
-	//	//isFailure = true;
-	//	//pushUnused(toRegion);
-	//	//sweepRegions.erase(toRegion);
-	//	//std::cout << "region id: " << data.toRegion << " has been freed\n";
-	//}
-
 	data.liveIndex = 0;
 	regions[data.fromRegion].liveNodes.reset();
 }
@@ -322,7 +262,8 @@ void GarbageCollector::cleanUp(int region)
 
 		if (obj->state != EGCState::BLACK)
 			delete obj;
-
+		else
+			obj->state = EGCState::WHITE;
 	}
 
 }
@@ -338,19 +279,40 @@ void GarbageCollector::cleanUpRegions()
 		if (regions[region.toRegion].usedSize <= 0)
 			pushUnused(region.toRegion);
 		else {
-			//std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
+		//	std::cout << "region id: " << regions[region.toRegion].usedSize << " live\n";
 		}
 	}
-	eden = popUnused();
+}
+
+void GarbageCollector::concurrentCleanUp()
+{
+
+	std::cout << "concurrent cleanup started\n";
+	cleanUpRegions();
+}
+
+void GarbageCollector::gcThread()
+{
+	while (1) {
+		if (nextStep == EGCStep::CONCURRENT_MARK) {
+			concurrentMark();
+			nextStep = EGCStep::FINAL_MARK;
+		}
+
+		if (nextStep == EGCStep::CONCURRENT_CLEANUP) {
+			concurrentCleanUp();
+
+			nextStep = EGCStep::NON_GC;
+			//nextStep = EGCStep::FINAL_CLEANUP;
+		}
+	}
 }
 
 void GarbageCollector::concurrentSweep()
 {
-	onSweep = true;
-	std::thread markThread([this]() { 
-		this->sweep(); 
-		});
-	markThread.join();
+	nextStep = EGCStep::RUNNING;
+	this->sweep();
+	nextStep = EGCStep::CONCURRENT_CLEANUP;
 	
 }
 
@@ -360,8 +322,10 @@ void GarbageCollector::sweep() {
 	//sdec;
 	dec.clear();
 	for (auto region : sweepRegions) {
-		//if (region != eden)
-			dec.push_back(SweepData(region, -1));
+		dec.push_back(SweepData(region, -1));
+		//else {
+		//	regions[region].liveNodes.reset();
+		//}
 	}
 
 	
@@ -383,24 +347,10 @@ void GarbageCollector::sweep() {
 
 	}
 
+	eden = popUnused();
+
+	referenceMatch.clear();
 	nextStep = EGCStep::FINAL_CLEANUP;
-	/*auto& edenRefs = regions[eden].liveNodes;
-	if (!edenRefs.empty()) {
-		for (int i = 0; i < edenRefs.getSize(); i++) {
-			GET_TAG(edenRefs[i])->state = EGCState::WHITE;
-		}
-	}
-	edenRefs.reset();*/
-
-	
-	
-
-
-	//match.clear();
-	//sweepRegions.clear();
-	/*for (auto m : refs) {
-		m->ptr = lv[m->ptr];
-	}*/
 }
 
 void* GarbageCollector::Allocate(size_t _size, ObjectReflector* _reflector) {
@@ -408,16 +358,16 @@ void* GarbageCollector::Allocate(size_t _size, ObjectReflector* _reflector) {
 	CObject* v = nullptr;
 	if (size < DEFAULT_PADDING) size = DEFAULT_PADDING;
 
-	if (nextStep != EGCStep::NON_GC && nextStep != EGCStep::RUNNING) {
+	if (nextStep == EGCStep::FINAL_MARK || nextStep == EGCStep::INCREASEMENTAL_SWEEP) {
 		runCurrentStep();
 	}
 
 	/*if (ACTUAL_SIZEOF(size) >= MAX_REGION_CAPACITY / 2) {
 		v = (AllocObj*)malloc(ACTUAL_SIZEOF(size));
 	}*/
-
+	
 	while ((regions[eden].usedSize + size) >= MAX_REGION_CAPACITY) {
-		startGC();
+		runCurrentStep();
 	}
 
 	v = reinterpret_cast<CObject*>(regions[eden].memory + (regions[eden].usedSize));
@@ -441,21 +391,34 @@ void* GarbageCollector::move(CObject* tag, int toRegion)
 		regions[toRegion].isFull = true;
 		return nullptr;
 	}*/
-	tag->state = EGCState::WHITE;
 	//tag->regionID = toRegion;
 
 	void* exAddr = tag;
 	void* newAddr = currentRegionAddress(toRegion);
 
 	memcpy(newAddr, exAddr, size);
+
+	GET_TAG(newAddr)->state = EGCState::WHITE;
 	regions[toRegion].usedSize.fetch_add(size);
 
+	tag->fwdPtr = (CObject*)newAddr;
+	GET_TAG(newAddr)->fwdPtr = (CObject*)newAddr;
 
-	if (referenceMatch.count(GET_OBJ(tag)) != 0) {
-		std::vector<void**>& refVec = referenceMatch.at(GET_OBJ(tag));
-		for (auto ref : refVec) {
-			*ref = GET_OBJ(newAddr);
+	if (referenceMatch.count(tag) != 0) {
+		std::vector<GCPointer*>& refVec = referenceMatch.at(tag);
+		
+		if (refVec.empty()) {
+			abort();
 		}
+
+		for (auto ref : refVec) {
+			std::cout << "ex= " << ref->ptr << "now= " << newAddr << '\n';
+			ref->ptr = GET_TAG(newAddr);
+		}
+		refVec.clear();
+	}
+	else {
+		abort();
 	}
 
 	//std::cout << "faushifyha " << (unsigned int)reinterpret_cast<AllocObj*>(newAddr)->forwardPointer << '\n';
@@ -470,8 +433,9 @@ void GarbageCollector::pushLive(CObject* live) {
 }
 
 void GarbageCollector::insertDirtyCard(CObject* _changedRef) {
-	if (GET_TAG(_changedRef)->state == EGCState::WHITE)
-		dirtyCard.push_back(_changedRef);
+	//if (GET_TAG(_changedRef)->state == EGCState::WHITE)
+	_changedRef->state = EGCState::GRAY;
+	dirtyCard.push_back(_changedRef);
 	//GET_TAG(_changedRef)->state = EGCState::WHITE;
 	//_changedRef->disableRemark();
 }
@@ -481,20 +445,26 @@ void GarbageCollector::runCurrentStep()
 	switch (nextStep)	
 	{
 	case EGCStep::NON_GC:
-		nextStep = EGCStep::RUNNING;
 		mark();
-		concurrentMark();
+		nextStep = EGCStep::CONCURRENT_MARK;
 		break;
 	case EGCStep::FINAL_MARK:
 		nextStep = EGCStep::RUNNING;
-		concurrentSweep();
-		break;
-	case EGCStep::FINAL_CLEANUP:
-		
-		cleanUpRegions();
-		nextStep = EGCStep::NON_GC;
+		finMark();
+		nextStep = EGCStep::INCREASEMENTAL_SWEEP;
 		break;
 	case EGCStep::RUNNING:
 		break;
+	case EGCStep::INCREASEMENTAL_SWEEP:
+		concurrentSweep();
+		break;
+	case EGCStep::CONCURRENT_CLEANUP:
+		break;
+	default:
+		break;
 	}
+}
+
+void GCPointer::fwd() {
+	ptr = ptr->fwdPtr;
 }

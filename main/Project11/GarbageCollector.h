@@ -12,16 +12,24 @@
 #define DEFAULT_PADDING 8
 #define MAX_GC_THREAD 1
 
+
+enum class EGCState : unsigned char {
+	NONE,
+	WHITE,
+	GRAY,
+	BLACK,
+	DEAD
+};
+
+
 class CObject;
 
-class GCPointer {
+class GCPointer : public TPointer {
 protected:
 	CObject* ptr;
 public:
-	std::atomic<bool> remark;
-	inline void enableRemark() { remark = true; }
-	inline void disableRemark() { remark = false; }
-	inline void* get() const { return ptr; }
+	inline CObject* get() const { return ptr; }
+	void fwd();
 
 	friend class GarbageCollector;
 };
@@ -31,7 +39,11 @@ public:
 enum class EGCStep : unsigned char {
 	NON_GC,
 	RUNNING,
+	INITIAL_MARK,
+	CONCURRENT_MARK,
 	FINAL_MARK,
+	INCREASEMENTAL_SWEEP,
+	CONCURRENT_CLEANUP,
 	FINAL_CLEANUP,
 };
 //
@@ -161,32 +173,25 @@ public:/*
 	//std::unordered_map<int, void**> liveNodes;
 	
 	// INFO: current eden's region id
-	int eden;
+	volatile int eden;
 	
 	// (NOT IMPLMENTED) INFO: current survivor's region id
 	int survivor;
-	
+	std::thread* m_thread;
 
 	// INFO: this re-matching allocated objects from old address to new address only uses while compacting memory
 	//std::unordered_map<void*, std::list<void**>> match;
 	// INFO: this re-matching allocated objects in reference list from old address to new address only uses while compacting memory
-	std::unordered_map<void*, std::vector<void**>> referenceMatch;
+	std::unordered_map<CObject*, std::vector<GCPointer*>> referenceMatch;
 
 	std::unordered_set<int> sweepRegions;
 	std::list<GCPointer*> refs;
-	std::list<void*> dirtyCard;
+	std::list<CObject*> dirtyCard;
 	//std::deque<GCPointer*> gray;
 	AtomicArray<CObject*> gray;
-	//std::deque<void*> live;
-	//std::list<void*> black;
-	//std::list<void*> live;
-	//std::thread markingThread;
-
-	EGCStep nextStep;
+	std::atomic<EGCStep> nextStep;
 
 	bool onGC = false;
-	bool onMarking = false;
-	bool onSweep;
 	// stw
 	void mark();
 	void concurrentMark();
@@ -202,6 +207,9 @@ public:/*
 	void cleanUp(int region);
 
 	void cleanUpRegions();
+	void concurrentCleanUp();
+
+	void gcThread();
 
 	void grayOut();
 
@@ -211,8 +219,6 @@ public:/*
 	void startGC();
 
 	// idk
-	void compact();
-	void compactRef(void* _this);
 	
 
 	void pushUnused(int region);
@@ -233,6 +239,7 @@ public:/*
 
 	inline int getRegion(CObject* obj) {
 		int result = (((char*)obj) - memoryHanlde) / MAX_REGION_CAPACITY;
+		std::cout << result << '\n';
 		return result;
 	}
 
@@ -245,6 +252,14 @@ public:/*
 	static GarbageCollector* get() {
 		static GarbageCollector instance;
 		return &instance;
+	}
+
+	inline EGCStep currentStep() {
+		return nextStep;
+	}
+
+	inline bool onConcurrentMark() {
+		return (nextStep == EGCStep::CONCURRENT_MARK);
 	}
 };
 //
@@ -311,18 +326,43 @@ public:/*
 //};
 
 template<typename T>
-class GCPtr : public GCPointer {
+class TMember : public GCPointer {
+public:
+	inline void operator=(T* _other) {
+		CObject* other = ((CObject*)_other)->fwdPtr;
+		GarbageCollector* gc = GarbageCollector::get();
+		if (gc->onConcurrentMark() && ptr->isMarked() && other->isUnmarked()) {
+			gc->insertDirtyCard(other);
+		}
+		ptr = other;
+	}
+
+	void load() {
+		ptr = ptr->fwdPtr;
+	}
+
+	T* operator->() {
+		return reinterpret_cast<T*>(this->ptr);
+	}
+
+};
+
+template<typename T>
+class GCPtr : public TMember<T> {
 public:
 	GCPtr<T>(T* _ptr) {
 		this->ptr = reinterpret_cast<CObject*>(_ptr);
-		GarbageCollector::get()->refs.push_back(this);
+		this->ptr = this->ptr->fwdPtr;
+		GarbageCollector* gc = GarbageCollector::get();
+		gc->refs.push_back(this);
+		if (gc->onConcurrentMark() && this->ptr->isUnmarked()) {
+			gc->insertDirtyCard(this->ptr);
+		}
 	}
 
 	~GCPtr<T>() {
 		GarbageCollector::get()->refs.remove(this);
 	}
-	inline T* operator->() {
-		return reinterpret_cast<T*>(ptr);
-	}
+
 };
 

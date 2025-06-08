@@ -1,23 +1,15 @@
 #pragma once
 #include "Reflection.h"
 
-enum class EGCState : unsigned char {
-	NONE,
-	WHITE,
-	GRAY,
-	BLACK,
-	DEAD
-};
-
 class CObject
 {
 public:
 	using super = void;
 private:
-	EGCState state;
 public:
-	CObject() : state(EGCState::WHITE) {
-		state = EGCState::WHITE;
+	std::atomic<EGCState> state;
+	CObject* fwdPtr;
+	CObject() : state(EGCState::WHITE), fwdPtr(this) {
 	};
 	virtual ~CObject() {
 		//std::cout << "sitttt!\n";
@@ -27,7 +19,18 @@ public:
 		//((CObject*)ptr)->state = EGCState::WHITE;
 	}
 
+	inline bool isMarked() {
+		if (state == EGCState::BLACK) return true;
+		return false;
+	}
+
+	inline bool isUnmarked() {
+		if (state == EGCState::WHITE) return true;
+		return false;
+	}
+
 	friend class GarbageCollector;
+	friend class GCPointer;
 	REFLECT
 };
 

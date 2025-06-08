@@ -52,7 +52,7 @@ public:
 
 	void one() {
 		any += 200;
-
+		std::cout << this << " " << any << " ahhhhhh\n";
 		//std::cout << (int)GET_TAG(this)->age << ", " << (int)GET_TAG(this)->regionID << ", " << any << ", " << this << '\n';
 	}
 public:
@@ -65,9 +65,10 @@ class GCObjectable : public GCObject {
 public:
 	using super = GCObject;
 public:
-	GCObject* buddy;
-	GCObject* buddy2;
-	GCObjectable* dude;
+	TMember<GCObjectable> dude;
+	TMember<GCObject> buddy;
+	TMember<GCObject> buddy2;
+
 	REFLECT
 };
 
