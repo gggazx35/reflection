@@ -1,9 +1,0 @@
-﻿  GarbageCollector.cpp
-C:\Users\User\Documents\GitHub\reflection\main\Project11\GarbageCollector.h(241,14): warning C4244: '초기화 중': '__int64'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  (소스 파일 'GarbageCollector.cpp'을(를) 컴파일하는 중)
-  
-C:\Users\User\Documents\GitHub\reflection\main\Project11\GarbageCollector.cpp(110,27): warning C4267: '=': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\User\Documents\GitHub\reflection\main\Project11\GarbageCollector.cpp(166,14): warning C4930: 'std::thread markThread(void)': 프로토타입 함수가 호출되지 않았습니다. 변수 정의로 사용하려고 한 것은 아닌지 확인하십시오.
-C:\Users\User\Documents\GitHub\reflection\main\Project11\GarbageCollector.cpp(215,8): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\User\Documents\GitHub\reflection\main\Project11\GarbageCollector.cpp(357,11): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  Project11.vcxproj -> C:\Users\User\Documents\GitHub\reflection\main\x64\Debug\Project11.exe
